@@ -18,12 +18,12 @@ from db import base_datos
 class scrap:
     def __init__(self):
 
-        self.s = Service('F:\\YERSON\\chromedriver.exe')
-        self.ruta_descarga = "D:\\"
-        """
+        #self.s = Service('F:\\YERSON\\chromedriver.exe')
+        #self.ruta_descarga = "D:\\"
+
         self.s = Service("/home/yerson/Downloads/chromedriver_linux64/chromedriver")
         self.ruta_descarga = "/home/yerson/Downloads/"
-        """
+
 
         self.db = base_datos()
 
@@ -31,8 +31,9 @@ class scrap:
         self.count = 0
 
         chromeOptions = Options()
+        #"download.default_directory": "D:\\",
         chromeOptions.add_experimental_option("prefs", {
-            "download.default_directory": "D:\\",
+            "download.default_directory":"/home/yerson/Downloads/",
             "download.prompt_for_download": False,
             "download.directory_upgrade": True,
             "safebrowsing.enabled": True
@@ -77,56 +78,72 @@ class scrap:
         print("{ >>  file && Remove<< }")
         self.unsip()
         #ruta = self.ruta_descarga+self.getFileName()
-        ruta = "D:\\" + self.getFileName()
+        #ruta = "D:\\" + self.getFileName()
+        ruta = self.ruta_descarga + self.getFileName()
         #ruta = ruta[:-4]
         file = ruta+'.xls'
         print("fil <|>: ",file)
-        df = pd.read_excel(file)
+        #df = pd.read_excel(file)
         #++++++++++++++++++++++++******
         #  INSERTAR A LA BASE DE DATOS
         #******************************
-        num_df = df.shape[0]
-        print(df.columns)
+
+        a = xlrd.open_workbook(file)
+        sheet = a.sheet_by_index(0)
+        #print("sheet: ",sheet)
+        sheet.cell_value(0, 0)
+
+
+
+
+            #TRUNCATE TABLE indicadores_inv;
 
         if self.count == 0:
-            for index, i in df.iterrows():
-                print("++++++++\n")
-                f = df.loc[i,'Cód. Local']
-                Ci = df.loc[i,'Descripción']
-                Np = df.loc[i, 'Stock Unidades']
-                Ec = df.loc[i,'Stock a Costo']
-                Cb = df.loc[i, 'Días de Stock']
-                St = df.loc[i, 'Mix']
-                Ps = df.loc[i, 'Quiebres']
-                U = df.loc[i, 'Sin Venta']
-                b = df.loc[i, 'Stock Negativo']
-                print(f,Ci, Np, Cb, St, Ps, U,b)
-        elif self.count == 1:
-            for index, i in df.iterrows():
-                print("++++++++\n")
-                f = df.loc[i, 'Cód. Local']
-                Ci = df.loc[i, 'Descripción']
-                Np = df.loc[i, 'Stock Unidades']
-                Cb = df.loc[i, 'Stock a Costo']
-                St = df.loc[i, 'Días de Stock']
-                Ps = df.loc[i, 'Mix']
-                U = df.loc[i, 'Quiebres']
-                b = df.loc[i, 'Sin Venta']
-                ty = df.loc(i,'Stock Negativo')
-                print(f,Ci, Np, Cb, St, Ps, U, b,ty)
-                #insertar(Ci, Np, Cb, St, Ps, Ub)
-        elif self.count == 2:
-            for index, i in df.iterrows():
-                print("++++++++\n")
-                f = df.loc[i, 'Cód. SPSA']
-                Ci = df.loc[i, 'Cód. Proveedor']
-                Np = df.loc[i, 'Descripción Producto']
-                Cb = df.loc[i, 'Marca']
-                St = df.loc[i, 'Estado']
-                Ps = df.loc[i, 'Catalogado (Locales)']
-                U = df.loc[i, '% Cobertura']
-                print(f,Ci, Np, Cb, St, Ps, U)
+            for i in range(1,sheet.nrows):
+                cod = sheet.cell_value(i,0)
+                des = sheet.cell_value(i,1)
+                stk = sheet.cell_value(i,2)
+                stk_c = sheet.cell_value(i,3)
+                ds_stk = sheet.cell_value(i,4)
+                mix = sheet.cell_value(i,5)
+                qbres = sheet.cell_value(i,6)
+                sventa = sheet.cell_value(i,7)
+                stknega = sheet.cell_value(i,8)
 
+                #print(cod,des,stk,stk_c,ds_stk,mix,qbres,sventa,stknega)
+                self.db.indicadores_inv(cod,des,stk,stk_c,ds_stk,mix,qbres,sventa,stknega)
+            print("insertado indicadores_inv")
+
+        elif self.count == 1:
+            for i in range(1,sheet.nrows):
+                cod_spsa = sheet.cell_value(i,0)
+                cod_proveeedor = sheet.cell_value(i,1)
+                descripcion = sheet.cell_value(i,2)
+                um = sheet.cell_value(i,3)
+                marcas = sheet.cell_value(i,4)
+                total = sheet.cell_value(i,5)
+                locales = sheet.cell_value(i,6)
+                cd = sheet.cell_value(i,7)
+                mix = sheet.cell_value(i,8)
+                q = sheet.cell_value(i,8)
+
+                #print(cod_spsa,cod_proveeedor,descripcion,um,marcas,total,locales,cd,mix,q)
+                self.db.detalle_inv(cod_spsa,cod_proveeedor,descripcion,um,marcas,total,locales,cd,mix,q)
+            print("insertado detalle_inv")
+
+        elif self.count == 2:
+            for i in range(1,sheet.nrows):
+                cod_spsa = sheet.cell_value(i,0)
+                cod_proveeedor = sheet.cell_value(i,1)
+                descripcion_producto = sheet.cell_value(i,2)
+                marca = sheet.cell_value(i,3)
+                estado = sheet.cell_value(i,4)
+                catalogo_locales = sheet.cell_value(i,5)
+                cobertura = sheet.cell_value(i,6)
+
+                #print(cod_spsa,cod_proveeedor,descripcion_producto,marca,estado,catalogo_locales,cobertura)
+                self.db.informe_cob(cod_spsa,cod_proveeedor,descripcion_producto,marca,estado,catalogo_locales,cobertura)
+            print("insertado informe_cob")
         #self.db.detalle_inv()
 
         #print(df)
@@ -346,15 +363,3 @@ if __name__ == '__main__':
     #sc.file_df_remove()
     sc.driver.quit()
 
-"""
-sales
-invoice_type_id
-    tipo 3 --> note_cretito
-
-2 tablas de notas de cretido
-
-
-sales2
-
-sales2_details
-"""
